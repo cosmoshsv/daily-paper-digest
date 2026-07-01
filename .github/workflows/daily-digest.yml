@@ -1,0 +1,50 @@
+name: Daily Paper Digest
+
+on:
+  schedule:
+    # 13:03 UTC daily. Adjust to your timezone (GitHub Actions cron is UTC).
+    - cron: "3 13 * * *"
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  digest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - run: pip install -r requirements.txt
+
+      - name: Generate digest
+        run: python main.py
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add reports/
+          git diff --cached --quiet || git commit -m "Add daily digest for $(date -u +%F)"
+          git push
+
+      - name: Notify via ntfy
+        if: always()
+        run: |
+          REPORT_FILE="reports/$(date -u +%F).md"
+          if [ -f "$REPORT_FILE" ]; then
+            TOP_TITLE=$(grep -m1 '^## ' "$REPORT_FILE" | sed -E 's/^## [0-9]+\. //')
+            curl -sS -H "Title: Daily Paper Digest" \
+              -d "Top pick: ${TOP_TITLE:-see reports/}" \
+              "https://ntfy.sh/${{ secrets.NTFY_TOPIC }}"
+          else
+            curl -sS -H "Title: Daily Paper Digest failed" \
+              -d "The digest script did not produce a report today - check the Actions log." \
+              "https://ntfy.sh/${{ secrets.NTFY_TOPIC }}"
+          fi
