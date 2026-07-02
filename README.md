@@ -29,6 +29,28 @@ Edit `daily_digest/config.py`:
 - `ARXIV_MAX_FETCH` — how many recent papers to fetch before ranking.
 - `TOP_N` — how many papers to feature in the digest.
 - `CLAUDE_MODEL` — which Claude model ranks and summarizes.
+- `TOPIC_ARXIV_MAX_RESULTS` — how many arXiv hits to pull in per on-demand
+  topic search (below).
+
+## On-demand topic search
+
+For a topic you want to dig into right now (not just the daily digest),
+just ask in a Claude Code session — e.g. "search for recent work on
+speculative decoding" — and it runs:
+
+```bash
+python -m daily_digest.topic_search "speculative decoding"
+```
+
+This combines an arXiv keyword search with Claude's web_search tool (general
+web + news) and writes `reports/topic-<slug>-<date>.md` with sections for
+key papers, web/news coverage, Twitter/X chatter, and a takeaway.
+
+**Twitter/X caveat:** there's no free official API for real trending-topic
+data, so the "Twitter/X Chatter" section is a best-effort web-search
+approximation (whatever's indexed on the open web) — not live trends. If you
+get an X API bearer token later, this can be upgraded to real trend/recent
+tweet search.
 
 ## Scheduling (GitHub Actions)
 

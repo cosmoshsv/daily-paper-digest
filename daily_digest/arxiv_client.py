@@ -12,22 +12,8 @@ def _text(elem, tag):
     return node.text.strip() if node is not None and node.text else ""
 
 
-def fetch_papers(categories, max_results):
-    """Fetch the most recently submitted arXiv papers for the given categories.
-
-    Returns a list of dicts: {id, title, authors, summary, published, url}.
-    """
-    search_query = " OR ".join(f"cat:{c}" for c in categories)
-    params = {
-        "search_query": search_query,
-        "sortBy": "submittedDate",
-        "sortOrder": "descending",
-        "max_results": max_results,
-    }
-    response = requests.get(ARXIV_API_URL, params=params, timeout=30)
-    response.raise_for_status()
-
-    root = ET.fromstring(response.content)
+def _parse_feed(content):
+    root = ET.fromstring(content)
     papers = []
     for entry in root.findall(f"{{{ATOM_NS}}}entry"):
         arxiv_url = _text(entry, "id")
@@ -47,3 +33,35 @@ def fetch_papers(categories, max_results):
             }
         )
     return papers
+
+
+def _query(search_query, sort_by, max_results):
+    params = {
+        "search_query": search_query,
+        "sortBy": sort_by,
+        "sortOrder": "descending",
+        "max_results": max_results,
+    }
+    response = requests.get(ARXIV_API_URL, params=params, timeout=30)
+    response.raise_for_status()
+    return _parse_feed(response.content)
+
+
+def fetch_papers(categories, max_results):
+    """Fetch the most recently submitted arXiv papers for the given categories.
+
+    Returns a list of dicts: {id, title, authors, summary, published, url}.
+    """
+    search_query = " OR ".join(f"cat:{c}" for c in categories)
+    return _query(search_query, "submittedDate", max_results)
+
+
+def search_papers(query, max_results, sort_by="relevance"):
+    """Search arXiv for papers matching a free-text keyword/phrase across all fields.
+
+    sort_by: "relevance" (default) or "submittedDate".
+    Returns a list of dicts: {id, title, authors, summary, published, url}.
+    """
+    escaped = query.replace('"', '')
+    search_query = f'all:"{escaped}"' if " " in escaped else f"all:{escaped}"
+    return _query(search_query, sort_by, max_results)
