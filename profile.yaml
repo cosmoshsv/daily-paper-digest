@@ -1,0 +1,19 @@
+# Your interest profile. The daily digest ranks papers by how much they're
+# worth YOUR time, judged against this file. Edit freely - it takes effect
+# on the next run.
+#
+# Each topic needs a name; "note" is optional extra guidance for the ranker.
+
+topics:
+  - name: "LLM inference optimization"
+    note: "especially speculative decoding, quantization, KV-cache tricks"
+  - name: "AI agents and tool use"
+  - name: "Retrieval-augmented generation"
+
+# Papers matching these get surfaced even if they don't fit a topic above.
+always_show:
+  - "major new open-weight model releases"
+
+# Papers matching these get skipped even if topically adjacent.
+not_interested:
+  - "pure theory with no experiments"

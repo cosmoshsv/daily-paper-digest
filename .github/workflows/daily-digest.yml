@@ -30,7 +30,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add reports/
+          git add reports/ docs/
           git diff --cached --quiet || git commit -m "Add daily digest for $(date -u +%F)"
           git push
 
@@ -40,8 +40,9 @@ jobs:
           REPORT_FILE="reports/$(date -u +%F).md"
           if [ -f "$REPORT_FILE" ]; then
             TOP_TITLE=$(grep -m1 '^## ' "$REPORT_FILE" | sed -E 's/^## [0-9]+\. //')
+            TOP_SCORE=$(grep -m1 -oE 'worth [0-9]+/10' "$REPORT_FILE" || true)
             curl -sS -H "Title: Daily Paper Digest" \
-              -d "Top pick: ${TOP_TITLE:-see reports/}" \
+              -d "Top pick${TOP_SCORE:+ (${TOP_SCORE})}: ${TOP_TITLE:-see reports/}" \
               "https://ntfy.sh/${{ secrets.NTFY_TOPIC }}"
           else
             curl -sS -H "Title: Daily Paper Digest failed" \

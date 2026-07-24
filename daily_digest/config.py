@@ -7,7 +7,7 @@ ARXIV_CATEGORIES = ["cs.AI", "cs.LG", "cs.CL"]
 # How many of the most recently submitted papers to fetch before ranking.
 ARXIV_MAX_FETCH = 50
 
-# How many papers to feature in the final digest.
+# Maximum papers to feature in the final digest (fewer if it's a slow day).
 TOP_N = 5
 
 # Claude model used to rank and summarize the fetched abstracts.
@@ -16,4 +16,6 @@ CLAUDE_MODEL = "claude-opus-4-8"
 # How many arXiv keyword-search hits to pull in for an on-demand topic search.
 TOPIC_ARXIV_MAX_RESULTS = 15
 
-REPORTS_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "reports")
+_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+REPORTS_DIR = os.path.join(_ROOT, "reports")
+DOCS_DIR = os.path.join(_ROOT, "docs")

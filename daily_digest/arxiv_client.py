@@ -65,3 +65,24 @@ def search_papers(query, max_results, sort_by="relevance"):
     escaped = query.replace('"', '')
     search_query = f'all:"{escaped}"' if " " in escaped else f"all:{escaped}"
     return _query(search_query, sort_by, max_results)
+
+
+def fetch_candidate_papers(categories, profile, max_category_results, max_per_topic=10):
+    """Build the candidate pool for the daily digest.
+
+    Combines the recent-submissions firehose for the configured categories
+    with a recent-first keyword search per profile topic (so topics outside
+    the categories, e.g. q-bio or quant-ph interests, still show up).
+    Deduplicates by arXiv id, preserving first-seen order.
+    """
+    seen = {}
+    for paper in fetch_papers(categories, max_category_results):
+        seen.setdefault(paper["id"], paper)
+    for topic in profile["topics"]:
+        try:
+            hits = search_papers(topic["name"], max_per_topic, sort_by="submittedDate")
+        except requests.RequestException:
+            continue  # one bad topic query shouldn't sink the digest
+        for paper in hits:
+            seen.setdefault(paper["id"], paper)
+    return list(seen.values())
