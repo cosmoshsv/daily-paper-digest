@@ -1,129 +1,282 @@
+import datetime
 import html
 
-from .report import format_authors
-
 VERDICT_META = {
-    "must_read": ("Must read", "must"),
-    "worth_a_skim": ("Worth a skim", "skim"),
-    "radar": ("On your radar", "radar"),
+    "must_read": ("Must-read", "must"),
+    "worth_a_skim": ("Recommended", "rec"),
+    "radar": ("On radar", "radar"),
 }
 
 _CSS = """
 :root {
-  --bg: #faf9f6; --card: #ffffff; --text: #1c1c1e; --muted: #6e6e73;
-  --border: #e6e4de; --accent: #b45309;
-  --must: #b91c1c; --must-bg: #fef2f2;
-  --skim: #b45309; --skim-bg: #fffbeb;
-  --radar: #52525b; --radar-bg: #f4f4f5;
+  --paper: #f4f1e8; --ink: #16150f; --muted: #6b6559; --rule: #cfc7b4;
+  --must: #9c2b1b; --rec: #1f5b7a;
 }
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg: #101014; --card: #1a1a20; --text: #ececf1; --muted: #9a9aa3;
-    --border: #2a2a32; --accent: #f59e0b;
-    --must: #f87171; --must-bg: #2c1515;
-    --skim: #fbbf24; --skim-bg: #2a2110;
-    --radar: #a1a1aa; --radar-bg: #232329;
+    --paper: #14130f; --ink: #ece7db; --muted: #918a7c; --rule: #35322a;
+    --must: #e0705c; --rec: #6fb0d4;
   }
 }
-* { box-sizing: border-box; margin: 0; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
 body {
-  background: var(--bg); color: var(--text);
-  font: 16px/1.6 Georgia, 'Times New Roman', serif;
-  padding: 2.5rem 1rem 4rem;
+  background: var(--paper); color: var(--ink);
+  font-family: Georgia, 'Iowan Old Style', 'Times New Roman', serif;
+  padding: 1.25rem 1.5rem 4rem; -webkit-font-smoothing: antialiased;
 }
-.wrap { max-width: 720px; margin: 0 auto; }
-header { margin-bottom: 2rem; }
-header h1 { font-size: 1.9rem; font-weight: 600; letter-spacing: -0.01em; }
-header .date { color: var(--muted); font-size: 0.95rem; margin-top: 0.25rem; }
-header .profile-note { color: var(--muted); font-size: 0.85rem; margin-top: 0.5rem;
-  font-family: -apple-system, 'Segoe UI', system-ui, sans-serif; }
-.card {
-  background: var(--card); border: 1px solid var(--border); border-radius: 12px;
-  padding: 1.4rem 1.5rem; margin-bottom: 1.25rem;
+.sheet { max-width: 1180px; margin: 0 auto; }
+
+.meta-font {
+  font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  text-transform: uppercase; letter-spacing: 0.09em;
 }
-.card .meta {
-  display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap;
-  font-family: -apple-system, 'Segoe UI', system-ui, sans-serif;
-  font-size: 0.78rem; margin-bottom: 0.6rem;
+
+/* ---- top bar ---- */
+.topbar {
+  display: flex; justify-content: space-between; align-items: center;
+  font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  text-transform: uppercase; letter-spacing: 0.09em;
+  font-size: 0.62rem; color: var(--muted);
+  padding-bottom: 0.5rem; border-bottom: 1px solid var(--rule);
 }
-.badge { padding: 0.15rem 0.55rem; border-radius: 999px; font-weight: 600; }
-.badge.must  { color: var(--must);  background: var(--must-bg); }
-.badge.skim  { color: var(--skim);  background: var(--skim-bg); }
-.badge.radar { color: var(--radar); background: var(--radar-bg); }
-.score { color: var(--muted); font-weight: 600; }
-.score b { color: var(--accent); font-size: 0.95rem; }
-.card h2 { font-size: 1.2rem; line-height: 1.35; font-weight: 600; }
-.card h2 a { color: inherit; text-decoration: none; }
-.card h2 a:hover { text-decoration: underline; }
-.authors { color: var(--muted); font-size: 0.85rem; margin-top: 0.25rem; font-style: italic; }
-.tldr { margin-top: 0.75rem; }
-.why { margin-top: 0.6rem; color: var(--muted); font-size: 0.95rem; }
-.why b { color: var(--text); }
-.tags { margin-top: 0.8rem; display: flex; gap: 0.4rem; flex-wrap: wrap;
-  font-family: -apple-system, 'Segoe UI', system-ui, sans-serif; }
-.tag { font-size: 0.72rem; color: var(--muted); border: 1px solid var(--border);
-  border-radius: 6px; padding: 0.1rem 0.45rem; }
-.links { margin-top: 0.8rem; font-size: 0.82rem;
-  font-family: -apple-system, 'Segoe UI', system-ui, sans-serif; }
-.links a { color: var(--accent); text-decoration: none; margin-right: 0.9rem; }
-.links a:hover { text-decoration: underline; }
-.empty { color: var(--muted); font-style: italic; padding: 2rem 0; }
-footer { color: var(--muted); font-size: 0.78rem; margin-top: 2.5rem;
-  font-family: -apple-system, 'Segoe UI', system-ui, sans-serif; }
+.topbar a { color: inherit; text-decoration: none; }
+.topbar a:hover { color: var(--ink); }
+
+/* ---- masthead ---- */
+.masthead { text-align: center; padding: 1.6rem 0 0.9rem; }
+.masthead h1 {
+  font-family: 'Didot', 'Bodoni MT', 'Playfair Display', Georgia, serif;
+  font-size: clamp(2.6rem, 7vw, 4.4rem); font-weight: 400;
+  letter-spacing: -0.015em; line-height: 1;
+}
+.masthead .tagline {
+  font-style: italic; color: var(--muted); font-size: 0.95rem; margin-top: 0.5rem;
+}
+
+/* ---- filter bar ---- */
+.filters {
+  display: flex; justify-content: space-between; align-items: center;
+  flex-wrap: wrap; gap: 0.75rem;
+  border-top: 3px double var(--rule); border-bottom: 1px solid var(--rule);
+  padding: 0.5rem 0; margin-bottom: 1.5rem;
+}
+.fgroup { display: flex; align-items: center; gap: 0.4rem; }
+.fgroup > span { font-size: 0.6rem; color: var(--muted); }
+.pill {
+  font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  text-transform: uppercase; letter-spacing: 0.07em; font-size: 0.58rem;
+  padding: 0.2rem 0.5rem; border: 1px solid var(--rule); border-radius: 2px;
+  background: none; color: var(--muted); cursor: pointer;
+}
+.pill:hover { color: var(--ink); border-color: var(--ink); }
+.pill[aria-pressed="true"] { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+
+/* ---- bylines & tags ---- */
+.byline {
+  font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  text-transform: uppercase; letter-spacing: 0.08em;
+  font-size: 0.58rem; color: var(--muted);
+  margin-bottom: 0.45rem; display: flex; flex-wrap: wrap; gap: 0.3rem;
+  align-items: center;
+}
+.byline .sep { opacity: 0.45; }
+.tag { color: var(--ink); }
+.sig-must { color: var(--must); font-weight: 700; }
+.sig-rec { color: var(--rec); font-weight: 700; }
+.sig-radar { color: var(--muted); }
+.byline a { color: inherit; text-decoration: none; border-bottom: 1px solid var(--rule); }
+.byline a:hover { color: var(--ink); }
+
+/* ---- articles ---- */
+h2.head {
+  font-weight: 400; line-height: 1.16; letter-spacing: -0.01em;
+  margin-bottom: 0.5rem;
+}
+h2.head a { color: inherit; text-decoration: none; }
+h2.head a:hover { text-decoration: underline; text-underline-offset: 3px; }
+.art p { font-size: 0.875rem; line-height: 1.6; text-align: justify; hyphens: auto; }
+.art .kicker { margin-top: 0.55rem; color: var(--muted); font-style: italic; font-size: 0.82rem; text-align: left; }
+.dropcap::first-letter {
+  float: left; font-size: 3.1em; line-height: 0.82; padding: 0.06em 0.08em 0 0;
+  font-family: 'Didot', 'Bodoni MT', Georgia, serif;
+}
+
+/* ---- lead ---- */
+.lead { border-bottom: 3px double var(--rule); padding-bottom: 1.5rem; margin-bottom: 1.5rem; }
+.lead h2.head { font-size: clamp(1.6rem, 3.6vw, 2.5rem); }
+.lead .cols { column-count: 2; column-gap: 2rem; column-rule: 1px solid var(--rule); }
+@media (max-width: 700px) { .lead .cols { column-count: 1; } }
+
+/* ---- column flow ---- */
+.flow { column-count: 3; column-gap: 1.75rem; column-rule: 1px solid var(--rule); }
+@media (max-width: 980px) { .flow { column-count: 2; } }
+@media (max-width: 640px) { .flow { column-count: 1; } }
+.flow .art {
+  break-inside: avoid; -webkit-column-break-inside: avoid;
+  padding-bottom: 1.1rem; margin-bottom: 1.1rem; border-bottom: 1px solid var(--rule);
+}
+.flow h2.head { font-size: 1.12rem; }
+.art[hidden] { display: none; }
+
+.empty { text-align: center; font-style: italic; color: var(--muted); padding: 3rem 0; }
+.nomatch { text-align: center; font-style: italic; color: var(--muted); padding: 2rem 0; }
+footer {
+  border-top: 3px double var(--rule); margin-top: 2rem; padding-top: 0.75rem;
+  font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  text-transform: uppercase; letter-spacing: 0.09em;
+  font-size: 0.58rem; color: var(--muted); text-align: center;
+}
+"""
+
+_JS = """
+(function () {
+  var state = { source: 'all', signal: 'all' };
+  var arts = Array.prototype.slice.call(document.querySelectorAll('.flow .art'));
+  var nomatch = document.getElementById('nomatch');
+
+  function apply() {
+    var shown = 0;
+    arts.forEach(function (a) {
+      var ok = (state.source === 'all' || a.dataset.source === state.source) &&
+               (state.signal === 'all' || a.dataset.signal === state.signal);
+      a.hidden = !ok;
+      if (ok) shown++;
+    });
+    if (nomatch) nomatch.hidden = shown > 0;
+  }
+
+  document.querySelectorAll('.pill').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var group = btn.dataset.group;
+      state[group] = btn.dataset.value;
+      document.querySelectorAll('.pill[data-group="' + group + '"]').forEach(function (b) {
+        b.setAttribute('aria-pressed', String(b === btn));
+      });
+      apply();
+    });
+  });
+})();
 """
 
 
-def _pdf_url(paper):
-    return paper["url"].replace("/abs/", "/pdf/")
+def _esc(text):
+    return html.escape(str(text))
 
 
-def _card(paper):
-    label, cls = VERDICT_META.get(paper["verdict"], (paper["verdict"], "radar"))
-    tags = "".join(
-        f'<span class="tag">{html.escape(t)}</span>' for t in paper["topics"]
+def _first_author(authors):
+    return authors[0] if authors else "Unknown"
+
+
+def _signal_key(verdict):
+    return VERDICT_META.get(verdict, VERDICT_META["radar"])[1]
+
+
+def _byline(paper):
+    label, cls = VERDICT_META.get(paper["verdict"], VERDICT_META["radar"])
+    bits = [
+        f'<span>By {_esc(_first_author(paper["authors"]))}</span>',
+        '<span class="sep">·</span>',
+        f'<span class="sig-{cls}">{_esc(label)}</span>',
+    ]
+    for tag in paper["topics"][:2]:
+        bits.append('<span class="sep">·</span>')
+        bits.append(f'<span class="tag">{_esc(tag)}</span>')
+    bits.append('<span class="sep">·</span>')
+    bits.append(f'<span>{_esc(paper["source"])}</span>')
+    bits.append('<span class="sep">·</span>')
+    bits.append(f'<a href="{_esc(paper["url"])}">Read</a>')
+    return '<div class="byline">' + "".join(bits) + "</div>"
+
+
+def _article(paper, lead=False):
+    body = paper.get("body") or paper["tldr"]
+    text = (
+        f'<div class="cols"><p class="dropcap">{_esc(body)}</p>'
+        f'<p class="kicker">Why it matters: {_esc(paper["why_it_matters"])}</p></div>'
+        if lead
+        else f'<p class="dropcap">{_esc(body)}</p>'
+        f'<p class="kicker">Why it matters: {_esc(paper["why_it_matters"])}</p>'
     )
-    return f"""
-<article class="card">
-  <div class="meta">
-    <span class="badge {cls}">{html.escape(label)}</span>
-    <span class="score">worth <b>{paper["worth_score"]}/10</b></span>
-  </div>
-  <h2><a href="{html.escape(paper["url"])}">{html.escape(paper["title"])}</a></h2>
-  <div class="authors">{html.escape(format_authors(paper["authors"]))}</div>
-  <p class="tldr">{html.escape(paper["tldr"])}</p>
-  <p class="why"><b>Why it matters:</b> {html.escape(paper["why_it_matters"])}</p>
-  <div class="tags">{tags}</div>
-  <div class="links">
-    <a href="{html.escape(paper["url"])}">abstract</a>
-    <a href="{html.escape(_pdf_url(paper))}">pdf</a>
-  </div>
+    return f"""<article class="art"
+  data-source="{_esc(paper["source"].lower())}"
+  data-signal="{_signal_key(paper["verdict"])}">
+  {_byline(paper)}
+  <h2 class="head"><a href="{_esc(paper["url"])}">{_esc(paper["title"])}</a></h2>
+  {text}
 </article>"""
 
 
+def _pills(group, options):
+    out = []
+    for i, (value, label) in enumerate(options):
+        pressed = "true" if i == 0 else "false"
+        out.append(
+            f'<button class="pill" data-group="{group}" data-value="{_esc(value)}" '
+            f'aria-pressed="{pressed}">{_esc(label)}</button>'
+        )
+    return "".join(out)
+
+
 def build_html(date_str, papers, profile):
-    topic_names = ", ".join(t["name"] for t in profile["topics"])
-    if papers:
-        body = "\n".join(_card(p) for p in papers)
+    masthead = profile.get("masthead") or "The Daily Read"
+    tagline = profile.get("tagline") or "Papers Worth Your Time"
+
+    try:
+        d = datetime.date.fromisoformat(date_str)
+        pretty_date = f"{d:%A, %B} {d.day}, {d.year}".upper()
+    except (ValueError, TypeError):
+        pretty_date = str(date_str).upper()
+
+    if not papers:
+        content = '<p class="empty">No dispatches today — nothing cleared the bar.</p>'
+        filters = ""
     else:
-        body = '<p class="empty">Nothing cleared the bar today — enjoy the free time.</p>'
+        lead, rest = papers[0], papers[1:]
+        flow = "\n".join(_article(p) for p in rest)
+        content = (
+            f'<section class="lead">{_article(lead, lead=True)}</section>'
+            f'<section class="flow">{flow}</section>'
+            '<p class="nomatch" id="nomatch" hidden>Nothing matches that filter.</p>'
+            if rest
+            else f'<section class="lead">{_article(lead, lead=True)}</section>'
+        )
+        sources = sorted({p["source"] for p in papers})
+        source_opts = [("all", "All")] + [(s.lower(), s) for s in sources]
+        signal_opts = [
+            ("all", "All"),
+            ("must", "Must-read"),
+            ("rec", "Recommended"),
+        ]
+        filters = f"""
+  <nav class="filters">
+    <div class="fgroup"><span>Source:</span>{_pills("source", source_opts)}</div>
+    <div class="fgroup"><span>Signal:</span>{_pills("signal", signal_opts)}</div>
+  </nav>"""
+
+    count = len(papers)
     return f"""<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Daily Paper Digest — {html.escape(date_str)}</title>
+<title>{_esc(masthead)} — {_esc(date_str)}</title>
 <style>{_CSS}</style>
 </head>
 <body>
-<div class="wrap">
-  <header>
-    <h1>Daily Paper Digest</h1>
-    <div class="date">{html.escape(date_str)}</div>
-    <div class="profile-note">Ranked for: {html.escape(topic_names)}</div>
-  </header>
-  {body}
-  <footer>Generated from arXiv, ranked against profile.yaml.</footer>
+<div class="sheet">
+  <div class="topbar">
+    <span>Ranked against profile.yaml</span>
+    <span>{_esc(pretty_date)}</span>
+    <span>{count} {"story" if count == 1 else "stories"}</span>
+  </div>
+  <header class="masthead">
+    <h1>{_esc(masthead)}</h1>
+    <p class="tagline">{_esc(tagline)}</p>
+  </header>{filters}
+  {content}
+  <footer>Assembled from arXiv &middot; Ranked for you</footer>
 </div>
+<script>{_JS}</script>
 </body>
 </html>
 """

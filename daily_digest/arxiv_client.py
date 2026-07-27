@@ -30,6 +30,7 @@ def _parse_feed(content):
                 "summary": " ".join(_text(entry, "summary").split()),
                 "published": _text(entry, "published"),
                 "url": arxiv_url,
+                "source": "arXiv",
             }
         )
     return papers

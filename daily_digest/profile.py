@@ -38,6 +38,8 @@ def load_profile(path=None):
         "topics": topics,
         "always_show": data.get("always_show") or [],
         "not_interested": data.get("not_interested") or [],
+        "masthead": data.get("masthead") or "The Daily Read",
+        "tagline": data.get("tagline") or "Papers Worth Your Time",
     }
 
 

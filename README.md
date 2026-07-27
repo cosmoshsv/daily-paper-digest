@@ -13,10 +13,17 @@ cp .env.example .env   # fill in ANTHROPIC_API_KEY, or `ant auth login`
 
 Then edit **`profile.yaml`** — this is the heart of the ranking. List the
 topics you're actively learning (with optional notes), plus anything that
-should always be surfaced or always skipped. Papers are scored 1–10 against
-this profile and tagged with a verdict: 🔴 must read, 🟡 worth a skim,
-⚪ on your radar. The digest never pads — if only two papers clear the bar,
-you get two.
+should always be surfaced or always skipped. You can also set `masthead` and
+`tagline` to name your paper. Papers are scored 1–10 against this profile and
+tagged with a signal: **Must-read**, **Recommended**, or **On radar**. The
+digest never pads — if only three papers clear the bar, you get three.
+
+The HTML output is laid out as a newspaper broadsheet: top-scoring paper runs
+as the lead story with a drop cap, the rest fill three columns, and Source /
+Signal filter pills at the top let you narrow the page to must-reads only.
+Because it's a browsable front page rather than a shortlist, `TOP_N` defaults
+to 14 — lower it in `daily_digest/config.py` if you'd rather have a tight
+list.
 
 ## Run
 

@@ -8,7 +8,9 @@ ARXIV_CATEGORIES = ["cs.AI", "cs.LG", "cs.CL"]
 ARXIV_MAX_FETCH = 50
 
 # Maximum papers to feature in the final digest (fewer if it's a slow day).
-TOP_N = 5
+# The front page is a browsable broadsheet; use the Signal filter on the page
+# to narrow it to must-reads.
+TOP_N = 14
 
 # Claude model used to rank and summarize the fetched abstracts.
 CLAUDE_MODEL = "claude-opus-4-8"

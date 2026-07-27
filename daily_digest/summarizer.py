@@ -20,6 +20,15 @@ RANKING_SCHEMA = {
                         "type": "string",
                         "description": "1-2 punchy sentences: what the paper does and what it found.",
                     },
+                    "body": {
+                        "type": "string",
+                        "description": (
+                            "3-5 sentences of newspaper-style prose explaining the "
+                            "work: the problem, the approach, the headline result, and "
+                            "the caveat or open question. Plain declarative sentences, "
+                            "no bullet points, no markdown, no hype."
+                        ),
+                    },
                     "why_it_matters": {
                         "type": "string",
                         "description": "One sentence on why this is worth this reader's time, tied to their profile.",
@@ -38,6 +47,7 @@ RANKING_SCHEMA = {
                 "required": [
                     "arxiv_id",
                     "tldr",
+                    "body",
                     "why_it_matters",
                     "worth_score",
                     "verdict",
@@ -77,9 +87,13 @@ def rank_and_summarize(papers, top_n, profile, client=None):
         f"Below are {len(papers)} paper abstracts recently posted to arXiv. "
         f"Select AT MOST {top_n} papers that are genuinely worth this "
         "reader's time today, judged against their profile. Do not pad the "
-        "list - if only two papers clear the bar, return two. Prioritize "
+        "list - if only three papers clear the bar, return three. Prioritize "
         "substance over hype. Skip anything matching their 'not interested' "
         "list; lean toward anything matching 'always worth surfacing'.\n\n"
+        "These are laid out as a newspaper: the highest-scoring paper runs as "
+        "the lead story, the rest fill the columns, and the reader can filter "
+        "to must-reads. So be strict about tiering - reserve must_read for a "
+        "genuine handful, not half the list.\n\n"
         "Verdicts: must_read = directly advances a profile topic and is "
         "substantial; worth_a_skim = relevant, read the intro/figures; "
         "radar = tangential but worth knowing exists.\n\n"
@@ -110,6 +124,7 @@ def rank_and_summarize(papers, top_n, profile, client=None):
             {
                 **paper,
                 "tldr": pick["tldr"],
+                "body": pick["body"],
                 "why_it_matters": pick["why_it_matters"],
                 "worth_score": max(1, min(10, pick["worth_score"])),
                 "verdict": pick["verdict"] if pick["verdict"] in VERDICTS else "radar",

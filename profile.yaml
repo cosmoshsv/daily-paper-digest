@@ -1,9 +1,12 @@
 # Your interest profile. The daily digest ranks papers by how much they're
 # worth YOUR time, judged against this file. Edit freely - it takes effect
 # on the next run.
-#
-# Each topic needs a name; "note" is optional extra guidance for the ranker.
 
+# What your paper is called. Shown on the masthead.
+masthead: "The Daily Read"
+tagline: "Papers Worth Your Time"
+
+# Each topic needs a name; "note" is optional extra guidance for the ranker.
 topics:
   - name: "LLM inference optimization"
     note: "especially speculative decoding, quantization, KV-cache tricks"
