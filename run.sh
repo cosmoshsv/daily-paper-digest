@@ -23,12 +23,44 @@ for arg in "$@"; do
 done
 
 # --- python env -------------------------------------------------------------
+# Find a Python 3. Windows usually has `python` or the `py` launcher rather
+# than `python3` (where `python3` is often a Store stub that does nothing).
+find_python() {
+  for candidate in python3 python; do
+    if command -v "$candidate" >/dev/null 2>&1 &&
+       "$candidate" -c 'import sys; sys.exit(sys.version_info[0] != 3)' >/dev/null 2>&1; then
+      echo "$candidate"; return 0
+    fi
+  done
+  if command -v py >/dev/null 2>&1 && py -3 -c '' >/dev/null 2>&1; then
+    echo "py -3"; return 0
+  fi
+  return 1
+}
+
+if ! PYTHON="$(find_python)"; then
+  echo "ERROR: no Python 3 found on PATH." >&2
+  echo "  Install it from https://python.org (tick 'Add Python to PATH')." >&2
+  exit 1
+fi
+
 if [ ! -d "$VENV" ]; then
   echo "==> Creating virtualenv in $VENV"
-  python3 -m venv "$VENV"
+  $PYTHON -m venv "$VENV"
 fi
-# shellcheck disable=SC1091
-. "$VENV/bin/activate"
+
+# venv puts its activate script in bin/ on Unix, Scripts/ on Windows.
+if [ -f "$VENV/bin/activate" ]; then
+  # shellcheck disable=SC1091
+  . "$VENV/bin/activate"
+elif [ -f "$VENV/Scripts/activate" ]; then
+  # shellcheck disable=SC1091
+  . "$VENV/Scripts/activate"
+else
+  echo "ERROR: couldn't find the activate script in $VENV." >&2
+  echo "  Delete the $VENV directory and re-run to rebuild it." >&2
+  exit 1
+fi
 
 # Reinstall only when requirements.txt is newer than the last install stamp.
 STAMP="$VENV/.deps-installed"

@@ -37,6 +37,29 @@ list.
 only when `requirements.txt` changes), loads `.env`, builds the digest, and
 opens `docs/index.html`. It handles macOS, Linux, WSL, and Git Bash.
 
+### On Windows
+
+PowerShell can't run `.sh` files — it isn't a POSIX shell, so `./run.sh` will
+never work there. Use the Git Bash that ships with Git for Windows:
+
+```powershell
+bash run.sh                                  # if bash is on PATH
+& "C:\Program Files\Git\bin\bash.exe" run.sh # otherwise
+```
+
+Or right-click the repo folder → **Open Git Bash here** → `./run.sh`.
+
+If you'd rather stay in PowerShell entirely, run the steps directly:
+
+```powershell
+py -3 -m venv .venv
+.\.venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+$env:ANTHROPIC_API_KEY = "sk-ant-..."
+python main.py
+start docs\index.html
+```
+
 Or drive it directly:
 
 ```bash
