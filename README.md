@@ -28,6 +28,18 @@ list.
 ## Run
 
 ```bash
+./run.sh                          # build today's digest and open it in your browser
+./run.sh "speculative decoding"   # on-demand topic briefing, printed to the terminal
+./run.sh --no-open                # build only, skip the browser
+```
+
+`run.sh` creates a `.venv` on first run, installs dependencies (and reinstalls
+only when `requirements.txt` changes), loads `.env`, builds the digest, and
+opens `docs/index.html`. It handles macOS, Linux, WSL, and Git Bash.
+
+Or drive it directly:
+
+```bash
 python main.py
 ```
 
