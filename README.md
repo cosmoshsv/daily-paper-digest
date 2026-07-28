@@ -29,7 +29,7 @@ list.
 
 ```bash
 ./run.sh                          # build today's digest and open it in your browser
-./run.sh "speculative decoding"   # on-demand topic briefing, printed to the terminal
+./run.sh "speculative decoding"   # on-demand topic briefing, also opens as a page
 ./run.sh --no-open                # build only, skip the browser
 ```
 
@@ -83,8 +83,10 @@ python -m daily_digest.topic_search "speculative decoding"
 ```
 
 This combines an arXiv keyword search with Claude's web_search tool (general
-web + news) and writes `reports/topic-<slug>-<date>.md` with sections for
-key papers, web/news coverage, Twitter/X chatter, and a takeaway.
+web + news), then writes both `reports/topic-<slug>-<date>.md` and a
+newspaper-style `reports/topic-<slug>-<date>.html` — same layout as the daily
+digest, with the topic as the masthead, the synthesis running as a dek under
+it, and the Source filter split across arXiv / Web / X.
 
 **Twitter/X caveat:** there's no free official API for real trending-topic
 data, so the "Twitter/X Chatter" section is a best-effort web-search

@@ -12,8 +12,10 @@ def format_authors(authors):
     return text
 
 
-def build_markdown(date_str, papers):
-    lines = [f"# Daily Paper Digest — {date_str}", ""]
+def build_markdown(date_str, papers, title="Daily Paper Digest", standfirst=None):
+    lines = [f"# {title} — {date_str}", ""]
+    if standfirst:
+        lines += [f"*{standfirst}*", ""]
     if not papers:
         lines.append("*Nothing cleared the bar today — enjoy the free time.*")
         return "\n".join(lines)

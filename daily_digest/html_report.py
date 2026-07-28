@@ -52,6 +52,11 @@ body {
 .masthead .tagline {
   font-style: italic; color: var(--muted); font-size: 0.95rem; margin-top: 0.75rem;
 }
+.standfirst {
+  max-width: 46rem; margin: 1.5rem auto 0; text-align: center;
+  font-size: 1.02rem; line-height: 1.7; color: var(--ink);
+  border-top: 1px solid var(--rule); padding-top: 1.25rem;
+}
 
 /* ---- filter bar ---- */
 .filters {
@@ -220,7 +225,9 @@ def _pills(group, options):
     return "".join(out)
 
 
-def build_html(date_str, papers, profile):
+def build_html(date_str, papers, profile, standfirst=None):
+    """Render a newspaper page. `standfirst` is an optional dek shown under
+    the masthead - used by topic briefings to carry the takeaway."""
     masthead = profile.get("masthead") or "The Daily Read"
     tagline = profile.get("tagline") or "Papers Worth Your Time"
 
@@ -275,6 +282,7 @@ def build_html(date_str, papers, profile):
   <header class="masthead">
     <h1>{_esc(masthead)}</h1>
     <p class="tagline">{_esc(tagline)}</p>
+    {f'<p class="standfirst">{_esc(standfirst)}</p>' if standfirst else ""}
   </header>{filters}
   {content}
   <footer>Assembled from arXiv &middot; Ranked for you</footer>

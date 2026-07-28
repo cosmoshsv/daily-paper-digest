@@ -57,15 +57,16 @@ fi
 if [ -n "$TOPIC" ]; then
   echo "==> Topic briefing: $TOPIC"
   python -m daily_digest.topic_search "$TOPIC"
-  exit 0
+  # topic_search prints "Wrote <path>" lines; grab the .html one
+  PAGE="$(ls -t reports/topic-*.html 2>/dev/null | head -1 || true)"
+else
+  echo "==> Building today's digest"
+  python main.py
+  PAGE="docs/index.html"
 fi
 
-echo "==> Building today's digest"
-python main.py
-
 # --- open -------------------------------------------------------------------
-PAGE="docs/index.html"
-if [ "$OPEN_PAGE" -eq 0 ] || [ ! -f "$PAGE" ]; then
+if [ "$OPEN_PAGE" -eq 0 ] || [ -z "${PAGE:-}" ] || [ ! -f "$PAGE" ]; then
   exit 0
 fi
 
