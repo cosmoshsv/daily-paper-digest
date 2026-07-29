@@ -2,10 +2,40 @@ import json
 
 import anthropic
 
-from .config import CLAUDE_MODEL
+from .config import CLAUDE_MODEL, MAX_TOKENS
 from .profile import render_profile
 
 VERDICTS = ["must_read", "worth_a_skim", "radar"]
+
+
+def parse_json_response(response, what="response"):
+    """Pull structured JSON out of a response, failing loudly and usefully.
+
+    A truncated response surfaces as a bare JSONDecodeError deep in the parse,
+    which says nothing about the actual cause, so check stop_reason first.
+    """
+    stop = getattr(response, "stop_reason", None)
+    if stop == "max_tokens":
+        raise SystemExit(
+            f"Ran out of output tokens while writing the {what}, so the JSON was "
+            "cut off mid-value.\n"
+            "  Fix: raise MAX_TOKENS or lower TOP_N in daily_digest/config.py "
+            f"(currently MAX_TOKENS={MAX_TOKENS})."
+        )
+    if stop == "refusal":
+        raise SystemExit(f"The model declined to produce the {what}.")
+
+    text = next((b.text for b in response.content if b.type == "text"), "")
+    if not text.strip():
+        raise SystemExit(f"The model returned no text for the {what}.")
+    try:
+        return json.loads(text)
+    except json.JSONDecodeError as exc:
+        raise SystemExit(
+            f"Could not parse the {what} as JSON: {exc}\n"
+            f"  stop_reason was {stop!r}. If this repeats, raise MAX_TOKENS or "
+            "lower TOP_N in daily_digest/config.py."
+        ) from exc
 
 RANKING_SCHEMA = {
     "type": "object",
@@ -102,7 +132,7 @@ def rank_and_summarize(papers, top_n, profile, client=None):
 
     response = client.messages.create(
         model=CLAUDE_MODEL,
-        max_tokens=4096,
+        max_tokens=MAX_TOKENS,
         thinking={"type": "adaptive"},
         output_config={
             "effort": "medium",
@@ -111,8 +141,7 @@ def rank_and_summarize(papers, top_n, profile, client=None):
         messages=[{"role": "user", "content": prompt}],
     )
 
-    text = next(block.text for block in response.content if block.type == "text")
-    picks = json.loads(text)["papers"]
+    picks = parse_json_response(response, "ranking")["papers"]
 
     by_id = {p["id"]: p for p in papers}
     ranked = []

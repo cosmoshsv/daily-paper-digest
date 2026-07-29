@@ -15,6 +15,12 @@ TOP_N = 14
 # Claude model used to rank and summarize the fetched abstracts.
 CLAUDE_MODEL = "claude-opus-4-8"
 
+# Output token ceiling per API call. Adaptive thinking draws from this same
+# budget, so it needs real headroom: if the model runs out mid-response the
+# JSON comes back truncated. Roughly ~250 tokens per paper of output, plus
+# thinking. Raise this (or lower TOP_N) if you hit truncation errors.
+MAX_TOKENS = 16000
+
 # How many arXiv keyword-search hits to pull in for an on-demand topic search.
 TOPIC_ARXIV_MAX_RESULTS = 15
 

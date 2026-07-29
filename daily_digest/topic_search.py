@@ -1,15 +1,14 @@
 import datetime
-import json
 import os
 import re
 
 import anthropic
 
 from .arxiv_client import search_papers
-from .config import CLAUDE_MODEL, REPORTS_DIR, TOPIC_ARXIV_MAX_RESULTS
+from .config import CLAUDE_MODEL, MAX_TOKENS, REPORTS_DIR, TOPIC_ARXIV_MAX_RESULTS
 from .html_report import build_html
 from .report import build_markdown
-from .summarizer import VERDICTS
+from .summarizer import VERDICTS, parse_json_response
 
 WEB_SEARCH_TOOL = {"type": "web_search_20260209", "name": "web_search"}
 
@@ -110,7 +109,7 @@ def _research(client, topic, arxiv_block):
     messages = [{"role": "user", "content": prompt}]
     response = client.messages.create(
         model=CLAUDE_MODEL,
-        max_tokens=8192,
+        max_tokens=MAX_TOKENS,
         thinking={"type": "adaptive"},
         output_config={"effort": "medium"},
         tools=[WEB_SEARCH_TOOL],
@@ -126,7 +125,7 @@ def _research(client, topic, arxiv_block):
         ]
         response = client.messages.create(
             model=CLAUDE_MODEL,
-            max_tokens=8192,
+            max_tokens=MAX_TOKENS,
             thinking={"type": "adaptive"},
             output_config={"effort": "medium"},
             tools=[WEB_SEARCH_TOOL],
@@ -156,7 +155,7 @@ def _structure(client, topic, research):
     )
     response = client.messages.create(
         model=CLAUDE_MODEL,
-        max_tokens=8192,
+        max_tokens=MAX_TOKENS,
         thinking={"type": "adaptive"},
         output_config={
             "effort": "medium",
@@ -164,8 +163,7 @@ def _structure(client, topic, research):
         },
         messages=[{"role": "user", "content": prompt}],
     )
-    text = next(block.text for block in response.content if block.type == "text")
-    return json.loads(text)
+    return parse_json_response(response, "briefing")
 
 
 def _to_articles(items):
